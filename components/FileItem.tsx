@@ -22,74 +22,70 @@ export const FileItem: React.FC<FileItemProps> = ({ file, onRemove, onRotate }) 
   };
 
   const isPdf = file.type === 'application/pdf';
-  const getFileExtension = (name: string) => name.split('.').pop()?.toUpperCase() || 'FILE';
 
   return (
     <Reorder.Item
       value={file}
       dragListener={false}
       dragControls={dragControls}
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-      whileDrag={{ 
-        scale: 1.02, 
-        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-        backgroundColor: "#ffffff",
-        zIndex: 10
-      }}
-      className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-3 cursor-default select-none transition-colors"
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      whileDrag={{ scale: 1.01, zIndex: 50 }}
+      className="flex items-center gap-4 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200"
     >
-      <div 
-        className="text-gray-400 cursor-grab active:cursor-grabbing p-1 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
+      <button 
+        className="text-gray-300 cursor-grab active:cursor-grabbing p-1 hover:text-blue-500 transition-colors"
         onPointerDown={(e) => dragControls.start(e)}
+        aria-label="Drag to reorder"
       >
         <GripVertical className="w-5 h-5" />
-      </div>
+      </button>
 
-      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-white border border-gray-100 flex items-center justify-center relative overflow-hidden pointer-events-none">
+      <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center relative overflow-hidden group">
         <div 
-          className="w-full h-full flex items-center justify-center transition-transform duration-300"
+          className="w-full h-full flex items-center justify-center transition-transform duration-500 ease-out"
           style={{ transform: `rotate(${file.rotation}deg)` }}
         >
           {file.previewUrl ? (
-            <img src={file.previewUrl} alt="preview" className="w-full h-full object-cover" />
+            <img src={file.previewUrl} alt="Thumbnail" className="w-full h-full object-cover" />
           ) : isPdf ? (
-            <div className="w-full h-full bg-red-50 flex items-center justify-center">
-              <FileText className="w-6 h-6 text-red-500" />
-            </div>
+            <FileText className="w-8 h-8 text-red-500" />
           ) : (
-            <div className="w-full h-full bg-blue-50 flex items-center justify-center">
-              <ImageIcon className="w-6 h-6 text-blue-500" />
-            </div>
+            <ImageIcon className="w-8 h-8 text-blue-500" />
           )}
         </div>
-        
-        <div className={`absolute bottom-0 right-0 left-0 text-[8px] font-bold text-white text-center py-0.5 uppercase tracking-tighter ${isPdf ? 'bg-red-500' : 'bg-blue-500'}`}>
-          {getFileExtension(file.name)}
+        <div className={`absolute inset-x-0 bottom-0 py-0.5 text-[9px] font-black text-white text-center uppercase tracking-widest ${isPdf ? 'bg-red-500/90' : 'bg-blue-500/90'}`}>
+          {isPdf ? 'PDF' : 'IMG'}
         </div>
       </div>
 
-      <div className="flex-grow min-w-0 pointer-events-none">
-        <div className="flex items-center gap-2">
-           {isPdf ? <FileText className="w-3 h-3 text-red-400" /> : <FileImage className="w-3 h-3 text-blue-400" />}
-           <h4 className="text-sm font-semibold text-gray-900 truncate">{file.name}</h4>
+      <div className="flex-grow min-w-0">
+        <h4 className="text-sm font-bold text-gray-900 truncate pr-4">{file.name}</h4>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter bg-gray-100 px-1.5 py-0.5 rounded">
+            {formatSize(file.size)}
+          </span>
+          {file.rotation !== 0 && (
+            <span className="text-[10px] font-bold text-blue-500 uppercase tracking-tighter bg-blue-50 px-1.5 py-0.5 rounded">
+              {file.rotation}° Rotated
+            </span>
+          )}
         </div>
-        <p className="text-xs text-gray-500">{formatSize(file.size)} • {isPdf ? 'PDF' : 'Image'} {file.rotation !== 0 && `• ${file.rotation}°`}</p>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <button
           onClick={onRotate}
-          title="Rotate Page"
-          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+          title="Rotate 90°"
+          className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
         >
           <RotateCw className="w-5 h-5" />
         </button>
         <button
           onClick={onRemove}
-          title="Remove File"
-          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+          title="Remove"
+          className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
         >
           <X className="w-5 h-5" />
         </button>

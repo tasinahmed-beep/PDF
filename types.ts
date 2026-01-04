@@ -6,7 +6,8 @@ export interface FileObject {
   type: string;
   size: number;
   previewUrl?: string;
-  rotation: number; // 0, 90, 180, 270
+  rotation: number;
+  pageCount?: number;
 }
 
 export enum AppStatus {
@@ -18,7 +19,9 @@ export enum AppStatus {
 
 export enum AppMode {
   MERGE = 'MERGE',
-  COMPRESS = 'COMPRESS'
+  COMPRESS = 'COMPRESS',
+  SPLIT = 'SPLIT',
+  ORGANIZE = 'ORGANIZE'
 }
 
 export enum CompressionLevel {
@@ -39,4 +42,12 @@ export interface PdfMetadata {
   title: string;
   author: string;
   addPageNumbers: boolean;
+  watermark?: string;
+  password?: string;
+  grayscale?: boolean;
+}
+
+export interface ProcessedFile {
+  name: string;
+  blob: Blob;
 }
