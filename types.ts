@@ -10,6 +10,13 @@ export interface FileObject {
   pageCount?: number;
 }
 
+export interface PageObject {
+  id: string;
+  originalIndex: number; // 0-based
+  previewUrl: string;
+  rotation: number;
+}
+
 export enum AppStatus {
   IDLE = 'IDLE',
   PROCESSING = 'PROCESSING',

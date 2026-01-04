@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
-import { AppMode, FileObject, AppStatus, CompressionStats, CompressionLevel, PdfMetadata, ProcessedFile } from '../types';
-import { mergeFiles, compressPdf, splitPdf } from '../services/pdfService';
+import { AppMode, FileObject, AppStatus, CompressionStats, CompressionLevel, PdfMetadata, ProcessedFile, PageObject } from '../types';
+import { mergeFiles, compressPdf, splitPdf, organizePdfWithPages } from '../services/pdfService';
 
 export const useFileProcessor = (
   files: FileObject[],
@@ -11,7 +11,8 @@ export const useFileProcessor = (
   mergedFileName: string,
   compLevel: CompressionLevel,
   targetSize: number,
-  splitRange: string
+  splitRange: string,
+  organizePages: PageObject[]
 ) => {
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -36,7 +37,6 @@ export const useFileProcessor = (
         const blob = new Blob([bytes], { type: 'application/pdf' });
         downloadBlob(blob, `${mergedFileName || 'merged'}.pdf`);
         setStatus(AppStatus.SUCCESS);
-        setTimeout(() => setFiles([]), 3000);
       } 
       else if (mode === AppMode.COMPRESS) {
         await processBatchCompression();
@@ -47,6 +47,14 @@ export const useFileProcessor = (
         results.forEach((bytes, idx) => {
           downloadBlob(new Blob([bytes], { type: 'application/pdf' }), `${files[0].name.replace('.pdf', '')}_part_${idx + 1}.pdf`);
         });
+        setStatus(AppStatus.SUCCESS);
+      }
+      else if (mode === AppMode.ORGANIZE) {
+        if (!files[0]) throw new Error("No file selected for organizing.");
+        if (organizePages.length === 0) throw new Error("No pages selected to export.");
+        const bytes = await organizePdfWithPages(files[0].file, organizePages);
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        downloadBlob(blob, `${files[0].name.replace('.pdf', '')}_organized.pdf`);
         setStatus(AppStatus.SUCCESS);
       }
     } catch (error: any) {
