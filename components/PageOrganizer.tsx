@@ -1,9 +1,9 @@
 
-import React from 'react';
-import { Reorder, AnimatePresence } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PageObject } from '../types';
 import { PageItem } from './PageItem';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Grid, MousePointer2 } from 'lucide-react';
 
 interface PageOrganizerProps {
   pages: PageObject[];
@@ -14,43 +14,75 @@ interface PageOrganizerProps {
 }
 
 export const PageOrganizer: React.FC<PageOrganizerProps> = ({ pages, onReorder, onRemovePage, onRotatePage, onAddFiles }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Reorder logic for 2D grid: swaps items in the array when one is dragged over another
+  const movePage = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    const newPages = [...pages];
+    const [movedItem] = newPages.splice(fromIndex, 1);
+    newPages.splice(toIndex, 0, movedItem);
+    onReorder(newPages);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Visual Page Grid</h3>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200">
+            <Grid className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-gray-900 leading-tight">Visual Layout Editor</h3>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{pages.length} Pages Available</p>
+          </div>
+        </div>
         <button 
           onClick={onAddFiles}
-          className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+          className="flex items-center gap-2 text-xs font-black text-blue-600 hover:bg-blue-50 transition-all px-5 py-3 rounded-2xl border-2 border-blue-100 uppercase tracking-widest"
         >
           <PlusCircle className="w-4 h-4" />
-          Add more pages
+          Add More Pages
         </button>
       </div>
 
-      <Reorder.Group 
-        axis="y" 
-        values={pages} 
-        onReorder={onReorder}
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"
+      <div 
+        ref={containerRef}
+        className="bg-gray-50/50 p-6 sm:p-10 rounded-[3rem] border-2 border-white shadow-inner min-h-[400px]"
       >
-        <AnimatePresence initial={false}>
-          {pages.map((page, idx) => (
-            <PageItem
-              key={page.id}
-              page={page}
-              index={idx}
-              onRemove={() => onRemovePage(page.id)}
-              onRotate={() => onRotatePage(page.id)}
-            />
-          ))}
-        </AnimatePresence>
-      </Reorder.Group>
-
-      {pages.length === 0 && (
-        <div className="py-20 text-center bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200">
-          <p className="text-gray-400 font-medium">No pages left in the sequence.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-10">
+          <AnimatePresence mode="popLayout">
+            {pages.map((page, idx) => (
+              <PageItem
+                key={page.id}
+                page={page}
+                index={idx}
+                onRemove={() => onRemovePage(page.id)}
+                onRotate={() => onRotatePage(page.id)}
+                onDragOver={(draggedIdx) => movePage(draggedIdx, idx)}
+              />
+            ))}
+          </AnimatePresence>
         </div>
-      )}
+
+        {pages.length === 0 && (
+          <div className="py-32 text-center flex flex-col items-center gap-4 animate-in fade-in duration-700">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+              <MousePointer2 className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Drop a file to start organizing</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-4 p-5 bg-white rounded-3xl border border-gray-100 shadow-sm">
+        <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <span className="text-amber-600 font-black">!</span>
+        </div>
+        <p className="text-sm text-gray-500 font-medium">
+          <span className="text-gray-900 font-black">Dynamic Sorting:</span> Drag any page to insert it into a new position. The rest of the pages will automatically shift to make room.
+        </p>
+      </div>
     </div>
   );
 };

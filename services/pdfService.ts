@@ -2,28 +2,40 @@
 import { PDFDocument, rgb, StandardFonts, degrees, grayscale } from 'https://cdn.skypack.dev/pdf-lib';
 import { FileObject, CompressionStats, CompressionLevel, PdfMetadata, PageObject } from '../types';
 
+// PDF.js for rendering thumbnails
+const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs';
+const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+
 /**
- * Extracts each page of a PDF as a separate 1-page PDF Blob URL for previewing.
+ * Extracts each page and renders it to a Data URL thumbnail using PDF.js
  */
 export const getPdfPages = async (file: File): Promise<PageObject[]> => {
+  const { getDocument, GlobalWorkerOptions } = await import(PDFJS_URL);
+  GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+
   const arrayBuffer = await file.arrayBuffer();
-  const sourceDoc = await PDFDocument.load(arrayBuffer);
-  const pageCount = sourceDoc.getPageCount();
+  const pdf = await getDocument({ data: arrayBuffer }).promise;
+  const pageCount = pdf.numPages;
   const pages: PageObject[] = [];
 
-  for (let i = 0; i < pageCount; i++) {
-    const newDoc = await PDFDocument.create();
-    const [copiedPage] = await newDoc.copyPages(sourceDoc, [i]);
-    newDoc.addPage(copiedPage);
-    const pdfBytes = await newDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  for (let i = 1; i <= pageCount; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 0.5 }); // Lower scale for thumbnails
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
     
-    pages.push({
-      id: crypto.randomUUID(),
-      originalIndex: i,
-      previewUrl: URL.createObjectURL(blob),
-      rotation: 0
-    });
+    if (context) {
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      await page.render({ canvasContext: context, viewport }).promise;
+      
+      pages.push({
+        id: crypto.randomUUID(),
+        originalIndex: i - 1,
+        previewUrl: canvas.toDataURL('image/jpeg', 0.8),
+        rotation: 0
+      });
+    }
   }
   return pages;
 };
