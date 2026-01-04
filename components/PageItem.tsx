@@ -21,24 +21,27 @@ export const PageItem: React.FC<PageItemProps> = ({ page, index, onRemove, onRot
       dragSnapToOrigin
       onDragStart={() => setIsDragging(true)}
       onDragEnd={() => setIsDragging(false)}
-      // Fix: Removed deprecated onViewportBoxUpdate and unused onUpdate props which caused type errors
       whileDrag={{ 
-        scale: 1.1, 
-        zIndex: 100,
-        boxShadow: "0 30px 60px -12px rgba(0,0,0,0.25)",
+        scale: 1.12, 
+        rotate: 3,
+        zIndex: 1000,
+        boxShadow: "0 50px 100px -20px rgba(0,0,0,0.35), 0 30px 60px -30px rgba(0,0,0,0.4)",
       }}
-      // Transition settings for smooth "shifting" effect
+      // Transition for the "sliding" reorder effect
       transition={{
         type: "spring",
-        stiffness: 400,
-        damping: 35,
-        mass: 1
+        stiffness: 500,
+        damping: 40,
+        mass: 0.7,
+        layout: { duration: 0.4, ease: "circOut" }
       }}
-      className={`relative group bg-white rounded-[2rem] p-3 shadow-sm border-2 transition-colors cursor-grab active:cursor-grabbing
-        ${isDragging ? 'border-blue-500 opacity-90' : 'border-transparent hover:border-blue-100 hover:shadow-xl'}`}
+      className={`relative group bg-white rounded-[2.2rem] p-3 shadow-sm border-2 transition-all duration-300 cursor-grab active:cursor-grabbing
+        ${isDragging 
+          ? 'border-blue-500 ring-8 ring-blue-500/5 opacity-100' 
+          : 'border-transparent hover:border-blue-100 hover:shadow-xl'}`}
     >
       {/* Thumbnail Container */}
-      <div className="aspect-[3/4] bg-white rounded-2xl overflow-hidden border border-gray-50 relative group">
+      <div className={`aspect-[3/4] bg-white rounded-2xl overflow-hidden border border-gray-50 relative group transition-opacity duration-300 ${isDragging ? 'ring-1 ring-blue-200' : ''}`}>
         <img 
           src={page.previewUrl} 
           alt={`Page ${index + 1}`}
@@ -50,48 +53,55 @@ export const PageItem: React.FC<PageItemProps> = ({ page, index, onRemove, onRot
         {/* Subtle decorative overlay */}
         <div className="absolute inset-0 bg-gradient-to-tr from-gray-900/5 to-transparent pointer-events-none" />
 
-        {/* Hover Action Bar */}
-        <div className="absolute inset-x-0 bottom-0 p-3 flex justify-center gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-white/90 to-transparent backdrop-blur-[2px]">
-          <button 
-            onClick={(e) => { e.stopPropagation(); onRotate(); }}
-            className="p-2.5 bg-white shadow-lg rounded-xl text-gray-700 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all border border-gray-100"
-            title="Rotate Page"
-          >
-            <RotateCw className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="p-2.5 bg-red-500 shadow-lg rounded-xl text-white hover:bg-red-600 hover:scale-110 active:scale-95 transition-all"
-            title="Remove Page"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Action Bar - Hidden during drag for clarity */}
+        {!isDragging && (
+          <div className="absolute inset-x-0 bottom-0 p-3 flex justify-center gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-white/95 to-transparent backdrop-blur-[4px] z-20">
+            <button 
+              onClick={(e) => { e.stopPropagation(); onRotate(); }}
+              className="p-2.5 bg-white shadow-lg rounded-xl text-gray-700 hover:text-blue-600 hover:scale-110 active:scale-90 transition-all border border-gray-100"
+              title="Rotate Page"
+            >
+              <RotateCw className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              className="p-2.5 bg-red-500 shadow-lg rounded-xl text-white hover:bg-red-600 hover:scale-110 active:scale-90 transition-all"
+              title="Remove Page"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
-        {/* Drag Handle Icon (visible on hover) */}
-        <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-40 transition-opacity">
-          <GripVertical className="w-5 h-5 text-gray-900" />
+        {/* Enhanced Drag Handle Badge */}
+        <div className={`absolute top-3 left-3 z-30 flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 shadow-lg border
+          ${isDragging 
+            ? 'bg-blue-600 border-blue-400 text-white scale-125 rotate-[-3deg]' 
+            : 'bg-white/90 backdrop-blur-sm border-white text-gray-500 opacity-40 group-hover:opacity-100 group-hover:scale-110'
+          }`}
+        >
+          <GripVertical className={`w-4 h-4 transition-transform ${isDragging ? 'scale-110' : ''}`} />
         </div>
       </div>
 
       {/* Index Badges */}
-      <div className="mt-4 flex items-center justify-between px-2">
+      <div className={`mt-4 flex items-center justify-between px-2 pb-1 transition-opacity duration-200 ${isDragging ? 'opacity-40' : 'opacity-100'}`}>
         <div className="flex flex-col">
-          <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest leading-none mb-1">Source</span>
-          <span className="text-xs font-black text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+          <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest leading-none mb-1.5">Source</span>
+          <span className="text-xs font-black text-gray-400 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
             P.{page.originalIndex + 1}
           </span>
         </div>
         
         <div className="flex flex-col items-end">
-          <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1">Export</span>
-          <div className="w-7 h-7 rounded-xl bg-blue-600 text-white text-[10px] font-black flex items-center justify-center shadow-lg shadow-blue-200 border-2 border-white">
+          <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1.5">Export</span>
+          <div className="w-7 h-7 rounded-xl bg-blue-600 text-white text-[10px] font-black flex items-center justify-center shadow-lg shadow-blue-200 border-2 border-white transform transition-transform group-hover:scale-110">
             {index + 1}
           </div>
         </div>
       </div>
       
-      {/* Invisible drop zones for insertion logic */}
+      {/* Insertion Detection Zones (Always active for targets, inactive for the one being dragged) */}
       <div 
         className="absolute inset-y-0 left-0 w-1/2 z-10" 
         onDragEnter={() => !isDragging && onDragOver(index)}

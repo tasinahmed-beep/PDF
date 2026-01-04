@@ -44,6 +44,7 @@ const App: React.FC = () => {
       setFiles([masterFile]);
       
       if (mode === AppMode.ORGANIZE) {
+        setPages([]); // Clear previous pages immediately
         setIsExtractingPages(true);
         try {
           const extractedPages = await getPdfPages(masterFile.file);
@@ -116,6 +117,7 @@ const App: React.FC = () => {
                 {mode === AppMode.ORGANIZE ? (
                   <PageOrganizer 
                     pages={pages} 
+                    isLoading={isExtractingPages}
                     onReorder={setPages} 
                     onRemovePage={id => setPages(prev => prev.filter(p => p.id !== id))} 
                     onRotatePage={id => setPages(prev => prev.map(p => p.id === id ? {...p, rotation: (p.rotation + 90) % 360} : p))}
